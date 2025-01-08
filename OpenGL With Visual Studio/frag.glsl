@@ -8,6 +8,9 @@ in vec3 pos;
 in vec3 center;
 in vec3 normals;
 
+//in float yOffset;
+in float fragTime;
+
 out vec4 FragColor;
 
 float rand(vec2 co) {
@@ -46,15 +49,9 @@ float perlinNoise(vec2 seed) {
 }
 
 void main() {
-    /*float p1, p2, p3;
-    p1 = 0.5 * perlinNoise(pos.xy) + 0.5;
-    p2 = 0.5 * perlinNoise(pos.xz) + 0.5;
-    p3 = 0.5 * perlinNoise(pos.yz) + 0.5;
-	FragColor = vec4(p1, p2, p3, 1.0);*/
-    vec3 posNormals = abs(normals);
-    float temp = (posNormals.x + posNormals.y + posNormals.z) / 3.0 + 0.5;
-    temp = pow(temp, 20);
-    temp = clamp(temp, 0.0, 1.0);
-    FragColor = clamp(temp * vec4(0.45098039215, 0.36470588235, 0.64705882352, 0.0) + (1.0 - temp) * vec4(0.82745098039, 0.7725490196, 0.89803921568, 0.0), 0.0, 1.0);
-    FragColor.a = 1.0;
+    float p1, p2, p3;
+    p1 = 0.5 * perlinNoise(0.1 * pos.xy) + 0.5 + 0.1 * perlinNoise(pos.yx);
+    p2 = 0.5 * perlinNoise(0.1 * pos.xz) + 0.5 + 0.1 * perlinNoise(pos.zx);
+    p3 = 0.5 * perlinNoise(0.1 * pos.yz) + 0.5 + 0.1 * perlinNoise(pos.zy);
+	FragColor = vec4(p1, p2, p3, 1.0);
 }

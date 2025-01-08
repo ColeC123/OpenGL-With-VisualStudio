@@ -15,7 +15,19 @@ void frame_buffer_size_callback(GLFWwindow* wind, int width, int height);
 
 void generate_surface_normals(FloatArray* vertices, UIntArray* triangles, FloatArray* normals);
 
+void generate_plane_mesh(FloatArray* vertices, UIntArray* triangles, float width, float length, float density);
+
+void mouse_callback(GLFWwindow* wind, double xpos, double ypos);
+
 static Window window;
+
+bool firstMouse = true;
+
+float yaw = -M_PI / 2.0f;
+float pitch = 0.0f;
+
+vec3 direction;
+vec3 cameraFront = { 0.0f, 0.0f, -1.0f };
 
 int main(void) {
 	window = (Window){
@@ -28,7 +40,6 @@ int main(void) {
 	.frame_buffer_callback_pointer = frame_buffer_size_callback
 	};
 	windowInitialize(&window);
-	glfwSwapInterval(0);
 
 	Shader shader;
 
@@ -43,7 +54,8 @@ int main(void) {
 
 	FloatArray vertices = FLOAT_ARRAY_DEFAULT;
 	UIntArray indices = UINT_ARRAY_DEFAULT;
-	loadWaveFrontOBJ(&vertices, &indices, "C:\\Users\\colec\\Blender Models\\torus.obj");
+	//loadWaveFrontOBJ(&vertices, &indices, "C:\\Users\\colec\\Blender Models\\plane.obj");
+	generate_plane_mesh(&vertices, &indices, 1000.0f, 1000.0f, 1.0f);
 
 	FloatArray normals = FLOAT_ARRAY_DEFAULT;
 	generate_surface_normals(&vertices, &indices, &normals);
@@ -75,12 +87,23 @@ int main(void) {
 
 	unsigned int modelLocation = glGetUniformLocation(shader, "model");
 	unsigned int viewLocation = glGetUniformLocation(shader, "view");
-	glm_translate(view, (vec3) { 0.0f, -12.0f, -44.0f });
 	unsigned int projectionLocation = glGetUniformLocation(shader, "projection");
+
+	unsigned int timeLocation = glGetUniformLocation(shader, "time");
 
 	glEnable(GL_DEPTH_TEST);
 
-	float speed = 100.0f;
+	float camSpeed = 70.0f;
+
+	vec3 cameraPos = { 0.0f, 0.0f, 3.0f };
+	vec3 cameraUp = { 0.0f, 1.0f, 0.0f };
+
+	vec3 intermediate;
+	glm_vec3_add(cameraPos, cameraFront, intermediate);
+	glm_lookat(cameraPos, intermediate, cameraUp, view);
+
+	glfwSetInputMode(window.windPtr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	glfwSetCursorPosCallback(window.windPtr, mouse_callback);
 
 	while (!glfwWindowShouldClose(window.windPtr)) {
 		currTime = glfwGetTime();
@@ -88,44 +111,56 @@ int main(void) {
 
 		glm_perspective(M_PI / 4.0f, (float)window.width / (float)window.height, 0.1f, 1000.0f, projection);
 
-		if (glfwGetKey(window.windPtr, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-			glm_rotate(model, deltaTime, (vec3) { 0.0f, 1.0f, 0.0f });
-		}
-		else if (glfwGetKey(window.windPtr, GLFW_KEY_LEFT) == GLFW_PRESS) {
-			glm_rotate(model, -deltaTime, (vec3) { 0.0f, 1.0f, 0.0f });
-		}
+		direction[0] = cos(yaw) * cos(pitch);
+		direction[1] = sin(pitch);
+		direction[2] = sin(yaw) * cos(pitch);
+		glm_normalize(direction);
+		glm_vec3_copy(direction, cameraFront);
 
 		if (glfwGetKey(window.windPtr, GLFW_KEY_W) == GLFW_PRESS) {
-			glm_translate(view, (vec3) { 0.0f, 0.0f, -speed * deltaTime });
+			vec3 temp;
+			glm_vec3_scale(cameraFront, camSpeed * deltaTime, temp);
+			glm_vec3_add(cameraPos, temp, cameraPos);
 		}
 		else if (glfwGetKey(window.windPtr, GLFW_KEY_S) == GLFW_PRESS) {
-			glm_translate(view, (vec3) { 0.0f, 0.0f, speed * deltaTime});
+			vec3 temp;
+			glm_vec3_scale(cameraFront, camSpeed *  deltaTime, temp);
+			glm_vec3_sub(cameraPos, temp, cameraPos);
 		}
 
 		if (glfwGetKey(window.windPtr, GLFW_KEY_A) == GLFW_PRESS) {
-			glm_translate(view, (vec3) { -speed * deltaTime, 0.0f, 0.0f });
+			vec3 temp;
+			glm_vec3_cross(cameraFront, cameraUp, temp);
+			glm_vec3_normalize(temp);
+			glm_vec3_scale(temp, camSpeed * deltaTime, temp);
+			glm_vec3_sub(cameraPos, temp, cameraPos);
 		}
 		else if (glfwGetKey(window.windPtr, GLFW_KEY_D) == GLFW_PRESS) {
-			glm_translate(view, (vec3) { speed * deltaTime, 0.0f, 0.0f });
-		}
-
-		if (glfwGetKey(window.windPtr, GLFW_KEY_UP) == GLFW_PRESS) {
-			glm_rotate(model, deltaTime, (vec3){1.0f, 0.0f, 0.0f});
-		}
-		else if (glfwGetKey(window.windPtr, GLFW_KEY_DOWN) == GLFW_PRESS) {
-			glm_rotate(model, -deltaTime, (vec3) { 1.0f, 0.0f, 0.0f });
+			vec3 temp;
+			glm_vec3_cross(cameraFront, cameraUp, temp);
+			glm_vec3_normalize(temp);
+			glm_vec3_scale(temp, camSpeed * deltaTime, temp);
+			glm_vec3_add(cameraPos, temp, cameraPos);
 		}
 
 		if (glfwGetKey(window.windPtr, GLFW_KEY_SPACE) == GLFW_PRESS) {
-			glm_translate(view, (vec3) { 0.0f, speed* deltaTime, 0.0f });
+			vec3 temp;
+			glm_vec3_scale(cameraUp, camSpeed * deltaTime, temp);
+			glm_vec3_add(cameraPos, temp, cameraPos);
 		}
 		else if (glfwGetKey(window.windPtr, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-			glm_translate(view, (vec3) { 0.0f, -speed * deltaTime, 0.0f });
+			vec3 temp;
+			glm_vec3_scale(cameraUp, camSpeed * deltaTime, temp);
+			glm_vec3_sub(cameraPos, temp, cameraPos);
 		}
+
+		glm_vec3_add(cameraPos, cameraFront, intermediate);
+		glm_lookat(cameraPos, intermediate, cameraUp, view);
 
 		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)model);
 		glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (float*)view);
 		glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (float*)projection);
+		glUniform1f(timeLocation, currTime);
 
 		glClearColor(0.1, 0.5, 0.7, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -211,4 +246,80 @@ void generate_surface_normals(FloatArray* vertices, UIntArray* triangles, FloatA
 		normals->arr[3 * triangles->arr[i] + 1] = normalized[1];
 		normals->arr[3 * triangles->arr[i] + 2] = normalized[2];
 	}
+}
+
+void generate_plane_mesh(FloatArray* vertices, UIntArray* triangles, float width, float length, float density) {
+	float_array_free((*vertices));
+	uint_array_free((*triangles));
+	
+	int numLengthVertices = (int)(length / density);
+	int numWidthVertices = (int)(width / density);
+
+	float centerX = (int)((float)numWidthVertices * density) / 2;
+	float centerZ = (int)((float)numLengthVertices * density) / 2;
+
+	for (int i = 0; i < numLengthVertices; i++) {
+		for (int j = 0; j < numWidthVertices; j++) {
+			float_array_append(vertices, (float)j * density - centerX);
+			float_array_append(vertices, 0.0f);
+			float_array_append(vertices, (float)i * density - centerZ);
+		}
+	}
+
+	for (int i = 0; i < numLengthVertices - 1; i++) {
+		for (int j = 0; j < numWidthVertices - 1; j++) {
+			//First triangle of square
+			//bottomm left cornder index
+			uint_array_append(triangles, (i * numWidthVertices) + j);
+			//top left cornder index
+			uint_array_append(triangles, ((i + 1) * numWidthVertices) + j);
+			//bottom right cornder index
+			uint_array_append(triangles, (i * numWidthVertices) + j + 1);
+
+			//Second triangle of square
+			//top left cornder index
+			uint_array_append(triangles, ((i + 1) * numWidthVertices) + j);
+			//top right cornder index
+			uint_array_append(triangles, ((i + 1) * numWidthVertices) + j + 1);
+			//bottom right cornder index
+			uint_array_append(triangles, (i * numWidthVertices) + j + 1);
+
+		}
+	}
+}
+
+void mouse_callback(GLFWwindow* wind, double xpos, double ypos) {
+	static float lastX;
+	static float lastY;
+
+	if (firstMouse) {
+		lastX = (float)window.width / 2.0f;
+		lastY = (float)window.height / 2.0f;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	float sensitivity = 0.005f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	if (pitch > 89.0f) {
+		pitch = 89.0f;
+	}
+
+	if (pitch < -89.0f) {
+		pitch = -89.0f;
+	}
+
+	direction[0] = cos(yaw) * cos(pitch);
+	direction[1] = sin(pitch);
+	direction[2] = sin(yaw) * cos(pitch);
+	glm_normalize(direction);
 }
