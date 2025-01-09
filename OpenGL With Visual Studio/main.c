@@ -22,6 +22,7 @@ void mouse_callback(GLFWwindow* wind, double xpos, double ypos);
 static Window window;
 
 bool firstMouse = true;
+bool shouldTrackMouse = true;
 
 float yaw = -M_PI / 2.0f;
 float pitch = 0.0f;
@@ -88,12 +89,18 @@ int main(void) {
 	unsigned int modelLocation = glGetUniformLocation(shader, "model");
 	unsigned int viewLocation = glGetUniformLocation(shader, "view");
 	unsigned int projectionLocation = glGetUniformLocation(shader, "projection");
+	unsigned int seedLocation = glGetUniformLocation(shader, "vertSeed");
+	glUniform1i(seedLocation, 10);
 
 	unsigned int timeLocation = glGetUniformLocation(shader, "time");
 
 	glEnable(GL_DEPTH_TEST);
 
-	float camSpeed = 70.0f;
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_FRONT);
+
+	float camSpeed = 220.0f;
 
 	vec3 cameraPos = { 0.0f, 0.0f, 3.0f };
 	vec3 cameraUp = { 0.0f, 1.0f, 0.0f };
@@ -102,8 +109,10 @@ int main(void) {
 	glm_vec3_add(cameraPos, cameraFront, intermediate);
 	glm_lookat(cameraPos, intermediate, cameraUp, view);
 
-	glfwSetInputMode(window.windPtr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	glfwSetInputMode(window.windPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window.windPtr, mouse_callback);
+
+	float cursorAppearTime = 0.0f;
 
 	while (!glfwWindowShouldClose(window.windPtr)) {
 		currTime = glfwGetTime();
@@ -124,7 +133,7 @@ int main(void) {
 		}
 		else if (glfwGetKey(window.windPtr, GLFW_KEY_S) == GLFW_PRESS) {
 			vec3 temp;
-			glm_vec3_scale(cameraFront, camSpeed *  deltaTime, temp);
+			glm_vec3_scale(cameraFront, camSpeed * deltaTime, temp);
 			glm_vec3_sub(cameraPos, temp, cameraPos);
 		}
 
@@ -167,6 +176,17 @@ int main(void) {
 
 		if (glfwGetKey(window.windPtr, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 			glfwSetWindowShouldClose(window.windPtr, true);
+		}
+
+		if (glfwGetKey(window.windPtr, GLFW_KEY_C) == GLFW_PRESS && currTime - cursorAppearTime >= 0.2f) {
+			cursorAppearTime = currTime;
+			shouldTrackMouse = !shouldTrackMouse;
+			if (shouldTrackMouse) {
+				glfwSetInputMode(window.windPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			}
+			else {
+				glfwSetInputMode(window.windPtr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			}
 		}
 
 		glDrawElements(GL_TRIANGLES, indices.size, GL_UNSIGNED_INT, 0);
@@ -298,28 +318,30 @@ void mouse_callback(GLFWwindow* wind, double xpos, double ypos) {
 		firstMouse = false;
 	}
 
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos;
-	lastX = xpos;
-	lastY = ypos;
+	if (shouldTrackMouse == true) {
+		float xoffset = xpos - lastX;
+		float yoffset = lastY - ypos;
+		lastX = xpos;
+		lastY = ypos;
 
-	float sensitivity = 0.005f;
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
+		float sensitivity = 0.0029f;
+		xoffset *= sensitivity;
+		yoffset *= sensitivity;
 
-	yaw += xoffset;
-	pitch += yoffset;
+		yaw += xoffset;
+		pitch += yoffset;
 
-	if (pitch > 89.0f) {
-		pitch = 89.0f;
+		if (pitch > 89.0f) {
+			pitch = 89.0f;
+		}
+
+		if (pitch < -89.0f) {
+			pitch = -89.0f;
+		}
+
+		direction[0] = cos(yaw) * cos(pitch);
+		direction[1] = sin(pitch);
+		direction[2] = sin(yaw) * cos(pitch);
+		glm_normalize(direction);
 	}
-
-	if (pitch < -89.0f) {
-		pitch = -89.0f;
-	}
-
-	direction[0] = cos(yaw) * cos(pitch);
-	direction[1] = sin(pitch);
-	direction[2] = sin(yaw) * cos(pitch);
-	glm_normalize(direction);
 }
