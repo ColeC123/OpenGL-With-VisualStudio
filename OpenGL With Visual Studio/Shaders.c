@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <Windows.h>
 
 char* shaderFileToString(char* path) {
     //Have to open file in binary mode because fseek's behavior in text mode doesn't work properly

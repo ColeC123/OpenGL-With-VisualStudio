@@ -66,7 +66,7 @@ float perlinNoise(vec2 xy, int seed) {
 }
 
 void main() {
-    float height1 = 100 * perlinNoise(0.01 * position.xy - 13.789, vertSeed) + 50 * perlinNoise(0.02 * position.zy + 7.896, vertSeed) + 25 * perlinNoise(0.04 * position.zx - 78.128321, vertSeed);
+    float height1 = 100 * perlinNoise(0.01 * position.xy - 13.789 - time, vertSeed) + 50 * perlinNoise(0.02 * position.zy + 7.896 + time, vertSeed) + 25 * perlinNoise(0.04 * position.zx - 78.128321 + time, vertSeed);
 
     pos = position + height1 * vec3(0.0, 1.0, 0.0);
 	gl_Position = projection * view * model * vec4(pos, 1.0);

@@ -56,9 +56,9 @@ float perlinNoise(vec2 xy, int seed) {
 }
 
 void main() {
-    float p1 = 0.5 * perlinNoise(pos.xy * 0.1 - 0.987, fragSeed) + 0.5;
-    float p2 = 0.5 * perlinNoise(pos.xz * 0.1 + 0.1784, fragSeed) + 0.5;
-    float p3 = 0.5 * perlinNoise(pos.yz * 0.1 - 0.6123, fragSeed) + 0.5;
+    float p1 = 0.5 * perlinNoise(pos.xy * 0.05 - 0.987, fragSeed) + 0.5;
+    float p2 = 0.5 * perlinNoise(pos.xz * 0.05 + 0.1784, fragSeed) + 0.5;
+    float p3 = 0.5 * perlinNoise(pos.yz * 0.05 - 0.6123, fragSeed) + 0.5;
 	FragColor.rgb = vec3(p1, p2, p3);
     FragColor.a = 1.0;
     FragColor = clamp(FragColor, 0.0, 1.0);
