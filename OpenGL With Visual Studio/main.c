@@ -41,6 +41,7 @@ int main(void) {
 	.frame_buffer_callback_pointer = frame_buffer_size_callback
 	};
 	windowInitialize(&window);
+	glfwSwapInterval(0);
 
 	Shader shader;
 

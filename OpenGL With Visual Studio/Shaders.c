@@ -3,33 +3,29 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <Windows.h>
 
 char* shaderFileToString(char* path) {
-    char tempFileBuff[150];
-    FILE* file = fopen(path, "r");
-
-    if (file == NULL) {
-        printf("Shader file does not exist or was incorrectly specified\n");
+    //Have to open file in binary mode because fseek's behavior in text mode doesn't work properly
+    FILE* fptr = fopen(path, "rb");
+    if (fptr == NULL) {
+        printf("Failed to open file\n");
         exit(-1);
     }
 
-    fseek(file, 0L, SEEK_END);
-    int fileSize = (int)ftell(file);
-    char* shaderSource = (char*)malloc(fileSize);
+    fseek(fptr, 0L, SEEK_END);
+    int fileSize = (int)ftell(fptr) / sizeof(char);
+    rewind(fptr);
+
+    char* shaderSource = (char*)malloc((fileSize + 1) * sizeof(char));
     if (shaderSource == NULL) {
-        printf("Failed to allocate memory for shaderSource String in shaderFileToString function\n");
+        printf("Failed to allocate memory for string\n");
         exit(-1);
     }
-    fseek(file, 0L, SEEK_SET);
-    int fileCount = 0;
-    while (fgets(tempFileBuff, 150, file)) {
-        for (int i = 0; tempFileBuff[i] != '\0' && fileCount < fileSize - 1; i++) {
-            shaderSource[fileCount] = tempFileBuff[i];
-            fileCount++;
-        }
-    }
-    shaderSource[fileCount] = '\0';
-    fclose(file);
+    fread(shaderSource, sizeof(char), fileSize, fptr);
+    shaderSource[fileSize] = '\0';
+
+    fclose(fptr);
 
     return shaderSource;
 }
