@@ -21,7 +21,8 @@ out vec4 FragColor;
 //This is becuase the float for seed may be close to what the seed actually is, but not quite equal to it, and the small change can cause
 //inconsistencies that result in the output of rand changing a lot
 float rand(vec2 xy, int seed) {
-    return fract(tan(distance(xy*PHI, xy)*seed)*xy.x);
+    //I had to add the modulus operator inside of the tangent function because it would cause errors if the number became too large
+    return fract(tan(mod(distance(xy*PHI, xy)*seed, 500))*xy.x);
 }
 
 vec2 randomUnitVec(vec2 xy, int seed) {
@@ -31,6 +32,7 @@ vec2 randomUnitVec(vec2 xy, int seed) {
 }
 
 float easingFunction(float value) {
+    value = clamp(value, 0.0, 1.0);
     return (3 * value * value) - (2 * value * value * value);
 }
 
@@ -56,10 +58,11 @@ float perlinNoise(vec2 xy, int seed) {
 }
 
 void main() {
-    float p1 = 0.5 * perlinNoise(pos.xy * 0.05 - 0.987, fragSeed) + 0.5;
-    float p2 = 0.5 * perlinNoise(pos.xz * 0.05 + 0.1784, fragSeed) + 0.5;
-    float p3 = 0.5 * perlinNoise(pos.yz * 0.05 - 0.6123, fragSeed) + 0.5;
-	FragColor.rgb = vec3(p1, p2, p3);
+    float p1 = ( perlinNoise(pos.yx * 0.05 - fragTime, fragSeed) + perlinNoise(pos.xz * 0.05 + fragTime, fragSeed) + 2.0) / 4.0 + 0.35;
+
+    float p2 = ((perlinNoise(pos.zx * 0.4 - 1.5 * fragTime, fragSeed) + perlinNoise(pos.xy * 0.4 + 1.5 * fragTime, fragSeed) + 2.0) / 4.0) * easingFunction(pos.y * 0.05);
+    
+	FragColor.rgb = p2 * vec3(1.0, 1.0, 1.0) + p1 * vec3(0.0, 0.98, 1.0);
     FragColor.a = 1.0;
     FragColor = clamp(FragColor, 0.0, 1.0);
 }

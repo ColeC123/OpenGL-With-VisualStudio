@@ -314,8 +314,8 @@ void mouse_callback(GLFWwindow* wind, double xpos, double ypos) {
 	static float lastY;
 
 	if (firstMouse) {
-		lastX = (float)window.width / 2.0f;
-		lastY = (float)window.height / 2.0f;
+		lastX = (float)(window.width) / 2.0f;
+		lastY = (float)(window.height) / 2.0f;
 		firstMouse = false;
 	}
 
@@ -332,12 +332,12 @@ void mouse_callback(GLFWwindow* wind, double xpos, double ypos) {
 		yaw += xoffset;
 		pitch += yoffset;
 
-		if (pitch > 89.0f) {
-			pitch = 89.0f;
+		if (pitch > M_PI_2 - 0.1f) {
+			pitch = M_PI_2 - 0.1f;
 		}
 
-		if (pitch < -89.0f) {
-			pitch = -89.0f;
+		if (pitch < -(M_PI_2 - 0.1f)) {
+			pitch = -(M_PI_2 - 0.1f);
 		}
 
 		direction[0] = cos(yaw) * cos(pitch);
